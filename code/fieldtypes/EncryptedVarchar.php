@@ -14,19 +14,27 @@ use \DB,
  */
 class EncryptedVarchar extends Varchar
 {
+
+    protected $service;
+
+    public function __construct($name = null) {
+        $this->name = $name;
+        $this->service = Injector::inst()->get('EncryptAtRest\AtRestCryptoService');
+        parent::__construct($name);
+    }
+
     public function getValue()
     {
-        return Injector::inst()->get('EncryptAtRest\AtRestCryptoService')->decrypt($this->value);
+        return $this->service->decrypt($this->value);
     }
 
     public function requireField()
     {
-        $service = Injector::inst()->get('EncryptAtRest\AtRestCryptoService');
         $values = array(
             'type'  => 'varchar',
             'parts' => array(
                 'datatype'      => 'varchar',
-                'precision'     => $service->calculateRequiredFieldSize($this->size),
+                'precision'     => $this->service->calculateRequiredFieldSize($this->size),
                 'character set' => 'utf8',
                 'collate'       => 'utf8_general_ci',
                 'arrayValue'    => $this->arrayValue
@@ -39,8 +47,7 @@ class EncryptedVarchar extends Varchar
     public function prepValueForDB($value)
     {
         $value = parent::prepValueForDB($value);
-        $encryptor = new AtRestCryptoService();
-        $ciphertext = $encryptor->encrypt($value);
+        $ciphertext = $this->service->encrypt($value);
 
         return $ciphertext;
     }

@@ -16,12 +16,18 @@ use \DB,
 class EncryptedInt extends Int
 {
 
+    protected $service;
+
+    public function __construct($name = null) {
+        $this->name = $name;
+        $this->service = Injector::inst()->get('EncryptAtRest\AtRestCryptoService');
+        parent::__construct();
+    }
 
     public function getValue()
     {
         $value = $this->value;
-        $decryptor = new AtRestCryptoService();
-        return (int)$decryptor->decrypt($value);
+        return (int)$this->service->decrypt($value);
     }
 
     public function requireField()
@@ -43,8 +49,7 @@ class EncryptedInt extends Int
     public function prepValueForDB($value)
     {
         $value = parent::prepValueForDB($value);
-        $encryptor = new AtRestCryptoService();
-        $ciphertext = $encryptor->encrypt($value);
+        $ciphertext = $this->service->encrypt($value);
 
         return $ciphertext;
     }
