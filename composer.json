@@ -20,6 +20,6 @@
     },
 
     "require": {
-        "defuse/php-encryption": "2.0.x-dev"
+        "defuse/php-encryption": "2.0.x-dev@dev"
     }
 }
