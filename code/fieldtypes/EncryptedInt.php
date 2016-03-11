@@ -1,10 +1,5 @@
 <?php
 
-namespace EncryptAtRest\FieldTypes;
-
-use \DB,
-    \Int,
-    EncryptAtRest\AtRestCryptoService;
 
 /**
  * Class EncryptedInt
@@ -15,28 +10,43 @@ use \DB,
  */
 class EncryptedInt extends Int
 {
+    public $isEncrypted = true;
 
+    /**
+     * @var AtRestCryptoService
+     */
     protected $service;
 
-    public function __construct($name = null) {
+    public function __construct($name = null)
+    {
         $this->name = $name;
-        $this->service = Injector::inst()->get('EncryptAtRest\AtRestCryptoService');
+        $this->service = Injector::inst()->get('AtRestCryptoService');
         parent::__construct();
     }
 
-    public function getValue()
+    public function setValue($value, $record = null)
     {
-        $value = $this->value;
-        return (int)$this->service->decrypt($value);
+        $value = $this->getDecryptedValue($value);
+        return parent::setValue($value, $record);
     }
+
+    public function getDecryptedValue($value)
+    {
+        // Test if we're actually an encrypted value;
+        if (ctype_xdigit($value)) {
+            return $this->service->decrypt($value);
+        }
+        return $value;
+    }
+
 
     public function requireField()
     {
         $values = array(
-            'type'  => 'varchar',
+            'type'  => 'text',
             'parts' => array(
-                'datatype'   => 'varchar',
-                'precision'  => 255,
+                'datatype'   => 'text',
+//                'precision'  => $this->service->calculateRequiredFieldSize(11),  // Precision is hardcoded on Int
                 'null'       => 'not null',
                 'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue

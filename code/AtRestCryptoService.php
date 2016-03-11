@@ -1,6 +1,5 @@
 <?php
 
-namespace EncryptAtRest;
 
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
@@ -48,8 +47,13 @@ class AtRestCryptoService {
      * value.
      *
      * @param int $fieldSize Input field size (e.g. `Varchar(255)` would be a $fieldSize of 255 characters
+     * @return int
      */
     public function calculateRequiredFieldSize($fieldSize) {
-
+        return 4 // Version tag
+                + 16 // IV
+                + 16 // HKDF Salt
+                + 32 // HMAC-SHA-256
+                + $fieldSize;
     }
 }
