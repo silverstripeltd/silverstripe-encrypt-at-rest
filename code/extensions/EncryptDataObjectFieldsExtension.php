@@ -31,7 +31,10 @@ class EncryptDataObjectFieldsExtension extends DataExtension
         parent::onBeforeWrite();
 
         $dbFields = Config::inst()->get($this->owner->ClassName, 'db', Config::UNINHERITED);
-        $changedFields = $this->owner->getChangedFields();
+        $changedFields = array();
+        if (is_array($this->owner->getChangedFields())) {
+            $changedFields = $this->owner->getChangedFields();
+        }
         foreach ($dbFields as $dbFieldName => $dbFieldType) {
             $field = $this->owner->dbObject($dbFieldName);
             if ($this->shouldEncrypt($changedFields, $dbFieldName, $field)) {
