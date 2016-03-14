@@ -35,10 +35,12 @@ class EncryptDataObjectFieldsExtension extends DataExtension
         if (is_array($this->owner->getChangedFields())) {
             $changedFields = $this->owner->getChangedFields();
         }
-        foreach ($dbFields as $dbFieldName => $dbFieldType) {
-            $field = $this->owner->dbObject($dbFieldName);
-            if ($this->shouldEncrypt($changedFields, $dbFieldName, $field)) {
-                $field->prepValueForDB($this->owner->$dbFieldName);
+        if(is_array($dbFields)) {
+            foreach ($dbFields as $dbFieldName => $dbFieldType) {
+                $field = $this->owner->dbObject($dbFieldName);
+                if ($this->shouldEncrypt($changedFields, $dbFieldName, $field)) {
+                    $field->prepValueForDB($this->owner->$dbFieldName);
+                }
             }
         }
     }
