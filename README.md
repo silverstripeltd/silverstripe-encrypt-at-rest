@@ -12,7 +12,14 @@ decrypting the content.
 
 ## Usage
 
-TODO
+In your DataObject, use EncryptedDBField, to have it encrypted. At this point, everything is stored as text.
+
+Set a key in your `_ss_environment` file. 
+ 
+ ```define('ENCRYPT_AT_REST_KEY', 'mysupersecretlonghexkeyhere1234567890');```
+
+
+
 
 ## TODO
 
@@ -20,5 +27,5 @@ TODO
 - Clean up
 - EncryptedEnum needs validation
 - Extended testing
-- Test if the value is encrypted, before trying to decrypt
+- Test if the value is actually encrypted, before trying to decrypt
 - 

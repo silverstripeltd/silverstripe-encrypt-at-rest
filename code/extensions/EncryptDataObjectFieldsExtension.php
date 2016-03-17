@@ -48,7 +48,7 @@ class EncryptDataObjectFieldsExtension extends DataExtension
      * Should this value be encrypted?
      * @param array $changedFields
      * @param string $dbFieldName
-     * @param FormField $field
+     * @param DBField $field
      * @return bool
      */
     private function shouldEncrypt($changedFields, $dbFieldName, $field)

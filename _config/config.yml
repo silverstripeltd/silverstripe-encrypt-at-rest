@@ -1,3 +1,6 @@
 DataObject:
   extensions:
     - EncryptDataObjectFieldsExtension
+EncryptDataObjectFieldsExtension:
+  EncryptedDataObjects:
+    - EncryptDataObject
