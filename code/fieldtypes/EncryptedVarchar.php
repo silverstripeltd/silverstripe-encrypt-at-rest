@@ -1,6 +1,4 @@
 <?php
-use Defuse\Crypto\Core;
-
 
 /**
  * Class EncryptedVarchar
@@ -12,7 +10,7 @@ use Defuse\Crypto\Core;
 class EncryptedVarchar extends Varchar
 {
 
-    public $isEncrypted = true;
+    public $is_encrypted = true;
     /**
      * @var AtRestCryptoService
      */

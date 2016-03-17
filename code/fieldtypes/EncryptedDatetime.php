@@ -11,7 +11,7 @@
 class EncryptedDatetime extends SS_Datetime
 {
 
-    public $isEncrypted = true;
+    public $is_encrypted = true;
     /**
      * @var AtRestCryptoService
      */

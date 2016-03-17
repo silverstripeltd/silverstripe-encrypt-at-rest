@@ -1,4 +1,4 @@
-# silverstripe-encrypt-at-rest
+    # silverstripe-encrypt-at-rest
 
 This module allows data to be encrypted in the database, but be decrypted when extracted from the database, using a
 secret key (hopefully) known only by the web server.
@@ -13,3 +13,12 @@ decrypting the content.
 ## Usage
 
 TODO
+
+## TODO
+
+- Make sure $this->value is _always_ the unencrypted value
+- Clean up
+- EncryptedEnum needs validation
+- Extended testing
+- Test if the value is encrypted, before trying to decrypt
+- 

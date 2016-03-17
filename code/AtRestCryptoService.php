@@ -41,19 +41,4 @@ class AtRestCryptoService {
 
         return $key;
     }
-
-    /**
-     * Given an input field size, return the maximum length varchar object that would be required to store the encrypted
-     * value.
-     *
-     * @param int $fieldSize Input field size (e.g. `Varchar(255)` would be a $fieldSize of 255 characters
-     * @return int
-     */
-    public function calculateRequiredFieldSize($fieldSize) {
-        return 4 // Version tag
-                + 16 // IV
-                + 16 // HKDF Salt
-                + 32 // HMAC-SHA-256
-                + $fieldSize;
-    }
 }
