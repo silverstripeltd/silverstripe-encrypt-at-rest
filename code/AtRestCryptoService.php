@@ -28,6 +28,7 @@ class AtRestCryptoService {
         $encryptedFilename = str_replace('.txt', '.enc', $inputFilename);
         try{
             File::encryptFile($inputFilename, $encryptedFilename, $key);
+            unlink($inputFilename);
             return $encryptedFilename;
         } catch (Exception $e) {
             SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
@@ -41,9 +42,10 @@ class AtRestCryptoService {
         $decryptedFilename = str_replace('.enc', '.txt', $inputFilename);
         try{
             File::decryptFile($inputFilename, $decryptedFilename, $key);
+            unlink($inputFilename);
             return $decryptedFilename;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
+            SS_Log::log(sprintf('Decryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
             return false;
         }
     }
