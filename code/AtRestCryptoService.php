@@ -52,7 +52,7 @@ class AtRestCryptoService {
             $file->write();
             return $file;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $file, $e->getMessage()), SS_Log::ERR);
+            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $file->Name, $e->getMessage()), SS_Log::ERR);
             return false;
         }
 
@@ -75,7 +75,7 @@ class AtRestCryptoService {
             $file->write();
             return $file;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Decryption exception while parsing "%s": %s', $file, $e->getMessage()), SS_Log::ERR);
+            SS_Log::log(sprintf('Decryption exception while parsing "%s": %s', $file->Name, $e->getMessage()), SS_Log::ERR);
             return false;
         }
     }
