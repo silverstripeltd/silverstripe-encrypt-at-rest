@@ -4,3 +4,6 @@ DataObject:
 EncryptDataObjectFieldsExtension:
   EncryptedDataObjects:
     - EncryptDataObject
+File:
+  allowed_extensions:
+    ["enc"]

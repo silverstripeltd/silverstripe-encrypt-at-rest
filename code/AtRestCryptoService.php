@@ -2,48 +2,80 @@
 
 
 use Defuse\Crypto\Crypto;
+use Defuse\Crypto\Exception\CannotPerformOperationException;
+use Defuse\Crypto\Exception\CryptoTestFailedException;
+use Defuse\Crypto\Exception\InvalidCiphertextException;
+use Defuse\Crypto\Exception\InvalidInput;
 use Defuse\Crypto\File;
 use Defuse\Crypto\Key;
+use Ex\CryptoException;
 
 class AtRestCryptoService {
     /**
-     * @param $raw
-     * @param null $key
+     * @param string $raw
+     * @param null|Key $key
      * @return string
-     * @throws \Defuse\Crypto\Exception\CannotPerformOperationException
-     * @throws \Defuse\Crypto\Exception\CryptoTestFailedException
+     * @throws CannotPerformOperationException
+     * @throws CryptoTestFailedException
      */
     public function encrypt($raw, $key = null) {
         $key = $this->getKey($key);
         return Crypto::Encrypt($raw, $key);
     }
 
+    /**
+     * @param string $ciphertext
+     * @param null|Key $key
+     * @return string
+     * @throws CannotPerformOperationException
+     * @throws InvalidCiphertextException
+     */
     public function decrypt($ciphertext, $key = null) {
         $key = $this->getKey($key);
         return Crypto::Decrypt($ciphertext, $key);
     }
 
-    public function encryptFile($inputFilename, $key = null) {
+    /**
+     * @param \File $file
+     * @param null|Key $key
+     * @return bool|\File
+     * @throws InvalidInput
+     * @throws CryptoException
+     */
+    public function encryptFile($file, $key = null) {
         $key = $this->getKey($key);
-        $encryptedFilename = str_replace('.txt', '.enc', $inputFilename);
+        $encryptedFilename = str_replace('.txt', '.enc', $file->getFullPath());
         try{
-            File::encryptFile($inputFilename, $encryptedFilename, $key);
-            return $encryptedFilename;
+            File::encryptFile($file->getFullPath(), $encryptedFilename, $key);
+            unlink($file->getFullPath());
+            $file->Filename = str_replace('.txt', '.enc', $file->Filename);
+            $file->write();
+            return $file;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
+            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $file, $e->getMessage()), SS_Log::ERR);
             return false;
         }
 
     }
 
-    public function decryptFile($inputFilename, $key = null) {
+    /**
+     * @param \File $file
+     * @param null|Key $key
+     * @return bool|\File
+     * @throws InvalidInput
+     * @throws CryptoException
+     */
+    public function decryptFile($file, $key = null) {
         $key = $this->getKey($key);
-        $decryptedFilename = str_replace('.enc', '.txt', $inputFilename);
+        $decryptedFilename = str_replace('.enc', '.txt', $file->getFullPath());
         try{
-            File::decryptFile($inputFilename, $decryptedFilename, $key);
-            return $decryptedFilename;
+            File::encryptFile($file->getFullPath(), $decryptedFilename, $key);
+            unlink($file->getFullPath());
+            $file->Filename = str_replace('.enc', '.txt', $file->Filename);
+            $file->write();
+            return $file;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
+            SS_Log::log(sprintf('Decryption exception while parsing "%s": %s', $file, $e->getMessage()), SS_Log::ERR);
             return false;
         }
     }
