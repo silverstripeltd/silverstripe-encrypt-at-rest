@@ -2,6 +2,7 @@
 
 
 use Defuse\Crypto\Crypto;
+use Defuse\Crypto\File;
 use Defuse\Crypto\Key;
 
 class AtRestCryptoService {
@@ -20,6 +21,31 @@ class AtRestCryptoService {
     public function decrypt($ciphertext, $key = null) {
         $key = $this->getKey($key);
         return Crypto::Decrypt($ciphertext, $key);
+    }
+
+    public function encryptFile($inputFilename, $key = null) {
+        $key = $this->getKey($key);
+        $encryptedFilename = str_replace('.txt', '.enc', $inputFilename);
+        try{
+            File::encryptFile($inputFilename, $encryptedFilename, $key);
+            return $encryptedFilename;
+        } catch (Exception $e) {
+            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
+            return false;
+        }
+
+    }
+
+    public function decryptFile($inputFilename, $key = null) {
+        $key = $this->getKey($key);
+        $decryptedFilename = str_replace('.enc', '.txt', $inputFilename);
+        try{
+            File::decryptFile($inputFilename, $decryptedFilename, $key);
+            return $decryptedFilename;
+        } catch (Exception $e) {
+            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $inputFilename, $e->getMessage()), SS_Log::ERR);
+            return false;
+        }
     }
 
     public function getKey($rawKey) {
