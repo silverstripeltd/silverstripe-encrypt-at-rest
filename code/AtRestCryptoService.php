@@ -10,7 +10,8 @@ use Defuse\Crypto\File;
 use Defuse\Crypto\Key;
 use Ex\CryptoException;
 
-class AtRestCryptoService {
+class AtRestCryptoService
+{// extends Object {
     /**
      * @param string $raw
      * @param null|Key $key
@@ -18,7 +19,8 @@ class AtRestCryptoService {
      * @throws CannotPerformOperationException
      * @throws CryptoTestFailedException
      */
-    public function encrypt($raw, $key = null) {
+    public function encrypt($raw, $key = null)
+    {
         $key = $this->getKey($key);
         return Crypto::Encrypt($raw, $key);
     }
@@ -30,7 +32,8 @@ class AtRestCryptoService {
      * @throws CannotPerformOperationException
      * @throws InvalidCiphertextException
      */
-    public function decrypt($ciphertext, $key = null) {
+    public function decrypt($ciphertext, $key = null)
+    {
         $key = $this->getKey($key);
         return Crypto::Decrypt($ciphertext, $key);
     }
@@ -42,16 +45,19 @@ class AtRestCryptoService {
      * @throws InvalidInput
      * @throws CryptoException
      */
-    public function encryptFile($file, $key = null) {
+    public function encryptFile($file, $key = null)
+    {
         $key = $this->getKey($key);
         $encryptedFilename = str_replace('.txt', '.enc', $file->getFullPath());
-        try{
+        try {
             File::encryptFile($file->getFullPath(), $encryptedFilename, $key);
             unlink($file->getFullPath());
             $file->Filename = str_replace('.txt', '.enc', $file->Filename);
+            $file->Name = str_replace('.txt', '.enc', $file->Name);
             $file->write();
             return $file;
         } catch (Exception $e) {
+            print_r($e->getMessage());
             SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $file->Name, $e->getMessage()), SS_Log::ERR);
             return false;
         }
@@ -65,13 +71,15 @@ class AtRestCryptoService {
      * @throws InvalidInput
      * @throws CryptoException
      */
-    public function decryptFile($file, $key = null) {
+    public function decryptFile($file, $key = null)
+    {
         $key = $this->getKey($key);
         $decryptedFilename = str_replace('.enc', '.txt', $file->getFullPath());
-        try{
-            File::encryptFile($file->getFullPath(), $decryptedFilename, $key);
+        try {
+            File::decryptFile($file->getFullPath(), $decryptedFilename, $key);
             unlink($file->getFullPath());
             $file->Filename = str_replace('.enc', '.txt', $file->Filename);
+            $file->Name = str_replace('.enc', '.txt', $file->Name);
             $file->write();
             return $file;
         } catch (Exception $e) {
@@ -80,18 +88,19 @@ class AtRestCryptoService {
         }
     }
 
-    public function getKey($rawKey) {
+    public function getKey($rawKey)
+    {
         // If this is already a \Defuse\Crypto\Key object, just return it
-        if($rawKey instanceof Key) {
+        if ($rawKey instanceof Key) {
             return $rawKey;
         }
 
-        if($rawKey === null && defined('ENCRYPT_AT_REST_KEY')) {
+        if ($rawKey === null && defined('ENCRYPT_AT_REST_KEY')) {
             // Retrieve key from _ss_env, if set
             $rawKey = ENCRYPT_AT_REST_KEY;
         }
 
-        if($rawKey === null) {
+        if ($rawKey === null) {
             throw new \InvalidArgumentException('Can\'t encrypt without a key. Define ENCRYPT_AT_REST_KEY, or pass the $key argument.');
         }
 
