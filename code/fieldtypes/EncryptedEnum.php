@@ -73,4 +73,19 @@ class EncryptedEnum extends Enum
         $this->value = $ciphertext;
         return $ciphertext;
     }
+
+    /**
+     * Returns the values of this enum as an array, suitable for insertion into
+     * a {@link DropdownField}
+     *
+     * @param boolean
+     *
+     * @return array
+     */
+    public function enumValues($hasEmpty = true) {
+        $this->enum = array();
+        return ($hasEmpty)
+            ? array_merge(array('' => ''), ArrayLib::valuekey($this->enum))
+            : ArrayLib::valuekey($this->enum);
+    }
 }
