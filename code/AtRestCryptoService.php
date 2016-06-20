@@ -48,12 +48,11 @@ class AtRestCryptoService
     public function encryptFile($file, $key = null)
     {
         $key = $this->getKey($key);
-        $encryptedFilename = str_replace('.txt', '.enc', $file->getFullPath());
+        $encryptedFilename = $file->getFullPath() . '.enc';
         try {
             File::encryptFile($file->getFullPath(), $encryptedFilename, $key);
             unlink($file->getFullPath());
-            $file->Filename = str_replace('.txt', '.enc', $file->Filename);
-            $file->Name = str_replace('.txt', '.enc', $file->Name);
+            $file->Filename = $file->Filename . '.enc';
             $file->write();
             return $file;
         } catch (Exception $e) {
@@ -74,12 +73,12 @@ class AtRestCryptoService
     public function decryptFile($file, $key = null)
     {
         $key = $this->getKey($key);
-        $decryptedFilename = str_replace('.enc', '.txt', $file->getFullPath());
+        $decryptedFilename = str_replace('.enc', '', $file->getFullPath());
         try {
             File::decryptFile($file->getFullPath(), $decryptedFilename, $key);
             unlink($file->getFullPath());
-            $file->Filename = str_replace('.enc', '.txt', $file->Filename);
-            $file->Name = str_replace('.enc', '.txt', $file->Name);
+            $file->Filename = str_replace('.enc', '', $file->Filename);
+            $file->Name = str_replace('.enc', '', $file->Name);
             $file->write();
             return $file;
         } catch (Exception $e) {
