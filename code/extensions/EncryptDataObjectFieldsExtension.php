@@ -74,6 +74,8 @@ class EncryptDataObjectFieldsExtension extends DataExtension
     }
 
     /**
+     * @todo this is not really a readable code.
+     * @todo Clean this to make it more readable.
      * @param $bool
      * @return array
      */
