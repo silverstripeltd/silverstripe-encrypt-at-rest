@@ -22,7 +22,7 @@ class AtRestCryptoService
     public function encrypt($raw, $key = null)
     {
         $key = $this->getKey($key);
-        return Crypto::Encrypt($raw, $key);
+        return Crypto::Encrypt((string)$raw, $key);
     }
 
     /**
