@@ -1,28 +1,27 @@
 <?php
 
-/**
- * Class EncryptedVarchar
- * @package EncryptAtRest\Fieldtypes
- *
- * This class wraps around a Varchar, storing the value in the database as an encrypted string in a larger varchar
- * field, and returning the decrypted value.
- */
-class EncryptedVarchar extends Varchar
-{
+namespace Madmatt\EncryptAtRest\FieldType;
 
-    public $is_encrypted = true;
+use Exception;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBText;
+use Madmatt\EncryptAtRest\AtRestCryptoService;
+
+class EncryptedText extends DBText
+{
     /**
      * @var AtRestCryptoService
      */
     protected $service;
 
-    public function __construct($name)
+    public function __construct($name = null, $options = [])
     {
-        parent::__construct($name);
-        $this->service = Injector::inst()->get('AtRestCryptoService');
+        parent::__construct($name, $options);
+        $this->service = Injector::inst()->get(AtRestCryptoService::class);
     }
 
-    public function setValue($value, $record = array())
+    public function setValue($value, $record = null, $markChanged = true)
     {
         if (array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
@@ -56,9 +55,7 @@ class EncryptedVarchar extends Varchar
             'type'  => 'text',
             'parts' => array(
                 'datatype'   => 'text',
-//                'precision'  => $this->service->calculateRequiredFieldSize(strlen('Y-m-d H:i:s')),
                 'null'       => 'not null',
-                'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue
             )
         );
@@ -73,5 +70,4 @@ class EncryptedVarchar extends Varchar
         $this->value = $ciphertext;
         return $ciphertext;
     }
-
 }

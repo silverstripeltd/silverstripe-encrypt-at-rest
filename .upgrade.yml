@@ -1,0 +1,9 @@
+mappings:
+  AtRestCryptoService: Madmatt\EncryptAtRest\AtRestCryptoService
+  EncryptDataObjectFieldsExtension: Madmatt\EncryptAtRest\Extension\DecryptDataObjectFieldsExtension
+  EncryptedDatetime: Madmatt\EncryptAtRest\FieldType\EncryptedDatetime
+  EncryptedDecimal: Madmatt\EncryptAtRest\FieldType\EncryptedDecimal
+  EncryptedEnum: Madmatt\EncryptAtRest\FieldType\EncryptedEnum
+  EncryptedInt: Madmatt\EncryptAtRest\FieldType\EncryptedInt
+  EncryptedText: Madmatt\EncryptAtRest\FieldType\EncryptedText
+  EncryptedVarchar: Madmatt\EncryptAtRest\FieldType\EncryptedVarchar

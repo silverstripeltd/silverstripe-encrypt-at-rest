@@ -1,5 +1,12 @@
 <?php
 
+namespace Madmatt\EncryptAtRest\FieldType;
+
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBDecimal;
+use Madmatt\EncryptAtRest\AtRestCryptoService;
+
 /**
  * Class EncryptedDatetime
  * @package EncryptAtRest\Fieldtypes
@@ -7,22 +14,20 @@
  * This class wraps around a SS_Datetime, storing the value in the database as an encrypted string in a varchar field, but
  * returning it to SilverStripe as a decrypted SS_Datetime object.
  */
-class EncryptedDecimal extends Decimal
+class EncryptedDecimal extends DBDecimal
 {
-
-    public $is_encrypted = true;
     /**
      * @var AtRestCryptoService
      */
     protected $service;
 
-    public function __construct($name)
+    public function __construct($name = null, $wholeSize = 9, $decimalSize = 2, $defaultValue = 0)
     {
-        parent::__construct($name);
-        $this->service = Injector::inst()->get('AtRestCryptoService');
+        parent::__construct($name, $wholeSize, $decimalSize, $defaultValue);
+        $this->service = Injector::inst()->get(AtRestCryptoService::class);
     }
 
-    public function setValue($value, $record = array())
+    public function setValue($value, $record = null, $markChanged = true)
     {
         if (array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
@@ -51,9 +56,7 @@ class EncryptedDecimal extends Decimal
             'type'  => 'text',
             'parts' => array(
                 'datatype'   => 'text',
-//                'precision'  => $this->service->calculateRequiredFieldSize(strlen('Y-m-d H:i:s')),
                 'null'       => 'not null',
-                'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue
             )
         );

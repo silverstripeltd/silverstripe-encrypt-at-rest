@@ -1,20 +1,33 @@
 <?php
-class EncryptedText extends Text
-{
-    public $is_encrypted = true;
 
+namespace Madmatt\EncryptAtRest\FieldType;
+
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBDatetime;
+use Madmatt\EncryptAtRest\AtRestCryptoService;
+
+/**
+ * Class EncryptedDatetime
+ * @package EncryptAtRest\Fieldtypes
+ *
+ * This class wraps around a DBDatetime, storing the value in the database as an encrypted string in a varchar field, but
+ * returning it to SilverStripe as a decrypted DBDatetime object.
+ */
+class EncryptedDatetime extends DBDatetime
+{
     /**
      * @var AtRestCryptoService
      */
     protected $service;
 
-    public function __construct($name)
+    public function __construct($name = null, $options = [])
     {
-        parent::__construct($name);
-        $this->service = Injector::inst()->get('AtRestCryptoService');
+        parent::__construct($name, $options);
+        $this->service = Injector::inst()->get(AtRestCryptoService::class);
     }
 
-    public function setValue($value, $record = array())
+    public function setValue($value, $record = null, $markChanged = true)
     {
         if (array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
@@ -27,12 +40,7 @@ class EncryptedText extends Text
     {
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
-            try {
-                return $this->service->decrypt($value);
-            } catch (Exception $e) {
-                // We were unable to decrypt. Possibly a false positive, but return the unencrypted value
-                return $value;
-            }
+            return $this->service->decrypt($value);
         }
         return $value;
     }
@@ -48,9 +56,7 @@ class EncryptedText extends Text
             'type'  => 'text',
             'parts' => array(
                 'datatype'   => 'text',
-                //                'precision'  => $this->service->calculateRequiredFieldSize(strlen('Y-m-d H:i:s')),
                 'null'       => 'not null',
-                'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue
             )
         );
