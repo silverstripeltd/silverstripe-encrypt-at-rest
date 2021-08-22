@@ -3,23 +3,30 @@
 namespace Madmatt\EncryptAtRest;
 
 use Defuse\Crypto\Crypto;
-use Defuse\Crypto\Exception\CannotPerformOperationException;
-use Defuse\Crypto\Exception\CryptoTestFailedException;
-use Defuse\Crypto\Exception\InvalidCiphertextException;
-use Defuse\Crypto\Exception\InvalidInput;
+use Defuse\Crypto\Exception\BadFormatException;
+use Defuse\Crypto\Exception\EnvironmentIsBrokenException;
+use Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException;
 use Defuse\Crypto\File;
 use Defuse\Crypto\Key;
-use Ex\CryptoException;
+use Exception;
+use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use ReflectionClass;
+use ReflectionException;
+use SilverStripe\Assets\Storage\AssetStore;
 use SilverStripe\Core\Environment;
+use SilverStripe\Core\Injector\Injector;
 
 class AtRestCryptoService
 {
+
     /**
-     * @param string $raw
+     * @param string   $raw
      * @param null|Key $key
+     *
      * @return string
-     * @throws CannotPerformOperationException
-     * @throws CryptoTestFailedException
+     * @throws EnvironmentIsBrokenException
+     * @throws BadFormatException
      */
     public function encrypt($raw, $key = null)
     {
@@ -28,11 +35,13 @@ class AtRestCryptoService
     }
 
     /**
-     * @param string $ciphertext
+     * @param string   $ciphertext
      * @param null|Key $key
+     *
      * @return string
-     * @throws CannotPerformOperationException
-     * @throws InvalidCiphertextException
+     * @throws BadFormatException
+     * @throws EnvironmentIsBrokenException
+     * @throws WrongKeyOrModifiedCiphertextException
      */
     public function decrypt($ciphertext, $key = null)
     {
@@ -42,53 +51,70 @@ class AtRestCryptoService
 
     /**
      * @param \SilverStripe\Assets\File $file
-     * @param null|Key $key
-     * @return bool|\File
-     * @throws InvalidInput
-     * @throws CryptoException
+     * @param null|Key                  $key
+     *
+     * @return false|\SilverStripe\Assets\File
+     * @throws BadFormatException
+     * @throws EnvironmentIsBrokenException
      */
     public function encryptFile($file, $key = null)
     {
         $key = $this->getKey($key);
-        $encryptedFilename = $file->getFullPath() . '.enc';
         try {
-            File::encryptFile($file->getFullPath(), $encryptedFilename, $key);
-            unlink($file->getFullPath());
-            $file->Filename = $file->Filename . '.enc';
+            $currentPath = $this->getFullPath($file);
+            $encryptedFilename = $currentPath . '.enc';
+            File::encryptFile($currentPath, $encryptedFilename, $key);
+            $filename = $file->getFilename() . '.enc';
+            $file->deleteFile();
+            $file->File->setField('Filename', $filename);
             $file->write();
+            $file->protectFile();
+
             return $file;
         } catch (Exception $e) {
-            print_r($e->getMessage());
-            SS_Log::log(sprintf('Encryption exception while parsing "%s": %s', $file->Name, $e->getMessage()), SS_Log::ERR);
+            Injector::inst()->get(LoggerInterface::class)
+                ->error(sprintf('Encryption exception while parsing "%s": %s', $file->Name, $e->getMessage()));
             return false;
         }
 
     }
 
     /**
-     * @param \File $file
+     * @param \SilverStripe\Assets\File    $file
      * @param null|Key $key
-     * @return bool|\File
-     * @throws InvalidInput
-     * @throws CryptoException
+     *
+     * @return false|\SilverStripe\Assets\File
+     * @throws BadFormatException
+     * @throws EnvironmentIsBrokenException
      */
     public function decryptFile($file, $key = null)
     {
         $key = $this->getKey($key);
-        $decryptedFilename = str_replace('.enc', '', $file->getFullPath());
         try {
-            File::decryptFile($file->getFullPath(), $decryptedFilename, $key);
-            unlink($file->getFullPath());
-            $file->Filename = str_replace('.enc', '', $file->Filename);
-            $file->Name = str_replace('.enc', '', $file->Name);
+            $currentPath = $this->getFullPath($file);
+            $decryptedFilename = str_replace('.enc', '', $currentPath);
+            File::decryptFile($currentPath, $decryptedFilename, $key);
+            $filename = str_replace('.enc', '', $file->getFilename());
+            $file->deleteFile();
+            $file->File->setField('Filename', $filename);
             $file->write();
+            $file->protectFile();
+
             return $file;
         } catch (Exception $e) {
-            SS_Log::log(sprintf('Decryption exception while parsing "%s": %s', $file->Name, $e->getMessage()), SS_Log::ERR);
+            Injector::inst()->get(LoggerInterface::class)
+                ->error(sprintf('Decryption exception while parsing "%s": %s', $file->Name, $e->getMessage()));
             return false;
         }
     }
 
+    /**
+     * @param $rawKey
+     *
+     * @return Key
+     * @throws BadFormatException
+     * @throws EnvironmentIsBrokenException
+     */
     public function getKey($rawKey)
     {
         // If this is already a \Defuse\Crypto\Key object, just return it
@@ -103,11 +129,34 @@ class AtRestCryptoService
         }
 
         if ($rawKey === null) {
-            throw new \InvalidArgumentException('Can\'t encrypt without a key. Define ENCRYPT_AT_REST_KEY, or pass the $key argument.');
+            throw new InvalidArgumentException('Can\'t encrypt without a key. Define ENCRYPT_AT_REST_KEY, or pass the $key argument.');
         }
 
-        $key = Key::LoadFromAsciiSafeString($rawKey);
-
-        return $key;
+        return Key::LoadFromAsciiSafeString($rawKey);
     }
+
+
+    /**
+     * @param \SilverStripe\Assets\File $file
+     * @param string $visibility
+     * @return mixed
+     * @throws ReflectionException
+     */
+    protected function getFullPath($file, $visibility = AssetStore::VISIBILITY_PROTECTED)
+    {
+        $assetStore = Injector::inst()->get(AssetStore::class);
+
+        $filesystem = $visibility === AssetStore::VISIBILITY_PROTECTED
+            ? $assetStore->getProtectedFilesystem()
+            : $assetStore->getPublicFilesystem();
+        $adapter = $filesystem->getAdapter();
+
+        $reflection = new ReflectionClass(get_class($assetStore));
+        $method = $reflection->getMethod('getFileID');
+        $method->setAccessible(true);
+        $fileID = $method->invokeArgs($assetStore, [$file->Filename, $file->Hash, $file->Variant]);
+
+        return $adapter->applyPathPrefix($fileID);
+    }
+
 }
