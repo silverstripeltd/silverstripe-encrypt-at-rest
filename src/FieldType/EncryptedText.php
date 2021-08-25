@@ -23,8 +23,11 @@ class EncryptedText extends DBText
 
     public function setValue($value, $record = null, $markChanged = true)
     {
-        if (array_key_exists($this->name, $record) && $value === null) {
+        if (is_array($record) && array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
+        } elseif (is_object($record) && property_exists($record, $this->name) && $value === null) {
+            $key = $this->name;
+            $this->value = $record->$key;
         } else {
             $this->value = $value;
         }

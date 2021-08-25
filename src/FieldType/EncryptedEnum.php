@@ -6,6 +6,7 @@ use Exception;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\FieldType\DBEnum;
+use SilverStripe\ORM\ArrayLib;
 use Madmatt\EncryptAtRest\AtRestCryptoService;
 
 /**
@@ -30,8 +31,11 @@ class EncryptedEnum extends DBEnum
 
     public function setValue($value, $record = null, $markChanged = true)
     {
-        if (array_key_exists($this->name, $record) && $value === null) {
+        if (is_array($record) && array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
+        } elseif (is_object($record) && property_exists($record, $this->name) && $value === null) {
+            $key = $this->name;
+            $this->value = $record->$key;
         } else {
             $this->value = $value;
         }
