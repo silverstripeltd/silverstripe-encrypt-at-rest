@@ -2,6 +2,7 @@
 
 namespace Madmatt\EncryptAtRest\FieldType;
 
+use Exception;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\FieldType\DBDecimal;
@@ -43,7 +44,12 @@ class EncryptedDecimal extends DBDecimal
     {
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
-            return $this->service->decrypt($value);
+            try {
+                $value = $this->service->decrypt($value);
+            } catch (Exception $e) {
+                // We were unable to decrypt. Possibly a false positive, but return the unencrypted value
+                return $value;
+            }
         }
         return (float)$value;
     }
