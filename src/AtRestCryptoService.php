@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
+use SilverStripe\Assets\FilenameParsing\ParsedFileID;
 use SilverStripe\Assets\Storage\AssetStore;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
@@ -57,18 +58,27 @@ class AtRestCryptoService
      * @throws BadFormatException
      * @throws EnvironmentIsBrokenException
      */
-    public function encryptFile($file, $key = null)
+    public function encryptFile($file, $key = null, $visibility = AssetStore::VISIBILITY_PROTECTED)
     {
         $key = $this->getKey($key);
         try {
-            $currentPath = $this->getFullPath($file);
+            $currentPath = $this->getFullPath($file, $visibility);
             $encryptedFilename = $currentPath . '.enc';
             File::encryptFile($currentPath, $encryptedFilename, $key);
             $filename = $file->getFilename() . '.enc';
-            $file->deleteFile();
+            $isDeleted = $file->deleteFile();
             $file->File->setField('Filename', $filename);
             $file->write();
-            $file->protectFile();
+
+            if ($visibility === AssetStore::VISIBILITY_PROTECTED) {
+                $file->protectFile();
+            } elseif ($visibility === AssetStore::VISIBILITY_PUBLIC) {
+                $file->publishFile();
+            }
+
+            if (!$isDeleted && file_exists($currentPath)) {
+                @unlink($currentPath);
+            }
 
             return $file;
         } catch (Exception $e) {
@@ -87,18 +97,27 @@ class AtRestCryptoService
      * @throws BadFormatException
      * @throws EnvironmentIsBrokenException
      */
-    public function decryptFile($file, $key = null)
+    public function decryptFile($file, $key = null, $visibility = AssetStore::VISIBILITY_PROTECTED)
     {
         $key = $this->getKey($key);
         try {
-            $currentPath = $this->getFullPath($file);
-            $decryptedFilename = str_replace('.enc', '', $currentPath);
-            File::decryptFile($currentPath, $decryptedFilename, $key);
+            $currentPath = $this->getFullPath($file, $visibility);
             $filename = str_replace('.enc', '', $file->getFilename());
-            $file->deleteFile();
+            $decryptedFilename = str_replace($file->getFilename(), $filename, $currentPath);
+            File::decryptFile($currentPath, $decryptedFilename, $key);
+            $isDeleted = $file->deleteFile();
             $file->File->setField('Filename', $filename);
             $file->write();
-            $file->protectFile();
+
+            if ($visibility === AssetStore::VISIBILITY_PROTECTED) {
+                $file->protectFile();
+            } elseif ($visibility === AssetStore::VISIBILITY_PUBLIC) {
+                $file->publishFile();
+            }
+
+            if (!$isDeleted && file_exists($currentPath)) {
+                @unlink($currentPath);
+            }
 
             return $file;
         } catch (Exception $e) {
@@ -146,15 +165,21 @@ class AtRestCryptoService
     {
         $assetStore = Injector::inst()->get(AssetStore::class);
 
-        $filesystem = $visibility === AssetStore::VISIBILITY_PROTECTED
-            ? $assetStore->getProtectedFilesystem()
-            : $assetStore->getPublicFilesystem();
-        $adapter = $filesystem->getAdapter();
+        $adapter = $visibility === AssetStore::VISIBILITY_PROTECTED
+            ? $assetStore->getProtectedFilesystem()->getAdapter()
+            : $assetStore->getPublicFilesystem()->getAdapter();
 
-        $reflection = new ReflectionClass(get_class($assetStore));
-        $method = $reflection->getMethod('getFileID');
-        $method->setAccessible(true);
-        $fileID = $method->invokeArgs($assetStore, [$file->Filename, $file->Hash, $file->Variant]);
+        $strategy = $visibility === AssetStore::VISIBILITY_PROTECTED
+            ? $assetStore->getProtectedResolutionStrategy()
+            : $assetStore->getPublicResolutionStrategy();
+
+        $parsedFileID = new ParsedFileID($file->getFilename(), $file->getHash(), $file->getVariant());
+
+        try {
+            $fileID = $strategy->buildFileID($parsedFileID);
+        } catch (Exception $e) {
+            $fileID = rtrim($filename, '\\/');
+        }
 
         return $adapter->applyPathPrefix($fileID);
     }
