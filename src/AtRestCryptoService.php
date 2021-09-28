@@ -103,7 +103,8 @@ class AtRestCryptoService
         try {
             $currentPath = $this->getFullPath($file, $visibility);
             $filename = str_replace('.enc', '', $file->getFilename());
-            $decryptedFilename = str_replace($file->getFilename(), $filename, $currentPath);
+            $original = basename($filename);
+            $decryptedFilename = str_replace(basename($file->getFilename()), $original, $currentPath);
             File::decryptFile($currentPath, $decryptedFilename, $key);
             $isDeleted = $file->deleteFile();
             $file->File->setField('Filename', $filename);
