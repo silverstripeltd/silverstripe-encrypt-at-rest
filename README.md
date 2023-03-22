@@ -12,14 +12,19 @@ decrypting the content.
 
 ## Usage
 
-In your DataObject, use EncryptedDBField, to have it encrypted. At this point, everything is stored as text.
+In your DataObject, use the various field types in this module to have it encrypted. At this point, everything is stored as encrypted text.
 
-Set a key in your `_ss_environment` file. 
+Ensure you create a key to use for encryption/decryption. You can run the following code to generate a valid key:
+```php
+$key_object = Defuse\Crypto\Key::createNewRandomKey();
+$key_string = $key_object->saveToAsciiSafeString();
+```
+
+This key can then be set in your `_ss_environment.php` file:
  
- ```define('ENCRYPT_AT_REST_KEY', 'mysupersecretlonghexkeyhere1234567890');```
-
-
-
+ ```
+ define('ENCRYPT_AT_REST_KEY', 'defuse key here');
+ ```
 
 ## TODO
 
@@ -28,4 +33,4 @@ Set a key in your `_ss_environment` file.
 - EncryptedEnum needs validation
 - Extended testing
 - Test if the value is actually encrypted, before trying to decrypt
-- 
+- Merge in and release the SS4 upgrade
