@@ -1,4 +1,4 @@
-    # silverstripe-encrypt-at-rest
+# silverstripe-encrypt-at-rest
 
 This module allows data to be encrypted in the database, but be decrypted when extracted from the database, using a
 secret key (hopefully) known only by the web server.
