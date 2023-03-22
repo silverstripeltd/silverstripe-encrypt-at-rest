@@ -35,6 +35,8 @@ class EncryptedText extends DBText
 
     public function getDecryptedValue($value)
     {
+        // Type hardening for PHP 8.1+
+        $value = (string)$value;
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
             try {

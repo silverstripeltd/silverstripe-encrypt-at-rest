@@ -40,7 +40,7 @@ In your `DataObject`, create new database fields using an encrypted field type. 
 
 For example:
 
-```
+```php
 use Madmatt\EncryptAtRest\FieldType\EncryptedVarchar;
 
 class SecureDataObject extends DataObject {
