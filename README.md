@@ -10,9 +10,7 @@ This module allows Silverstripe CMS ORM data to be encrypted before being stored
 
 
 ## Requirements
-* SilverStripe CMS 4
-* Requires a version of silverstripe-framework that includes [this pull request](https://github.com/silverstripe/silverstripe-framework/pull/10047), or for this PR to be manually patched into your version of framework.
-
+* SilverStripe CMS 4.9
 
 ## Installation
 Install via Composer:
