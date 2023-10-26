@@ -1,5 +1,14 @@
 <?php
 
+namespace Madmatt\EncryptAtRest\FieldType;
+
+use Exception;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBEnum;
+use SilverStripe\ORM\ArrayLib;
+use Madmatt\EncryptAtRest\AtRestCryptoService;
+
 /**
  * Class EncryptedEnum
  * @package EncryptAtRest\Fieldtypes
@@ -7,25 +16,26 @@
  * This class wraps around a Enum, storing the value in the database as an encrypted string in a varchar field, but
  * returning it to SilverStripe as a decrypted Enum object.
  */
-class EncryptedEnum extends Enum
+class EncryptedEnum extends DBEnum
 {
-
-    public $is_encrypted = true;
     /**
      * @var AtRestCryptoService
      */
     protected $service;
 
-    public function __construct($name)
+    public function __construct($name = null, $enum = null, $default = 0, $options = [])
     {
-        parent::__construct($name);
-        $this->service = Injector::inst()->get('AtRestCryptoService');
+        parent::__construct($name, $enum, $default, $options);
+        $this->service = Injector::inst()->get(AtRestCryptoService::class);
     }
 
-    public function setValue($value, $record = array())
+    public function setValue($value, $record = null, $markChanged = true)
     {
-        if (array_key_exists($this->name, $record) && $value === null) {
+        if (is_array($record) && array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
+        } elseif (is_object($record) && property_exists($record, $this->name) && $value === null) {
+            $key = $this->name;
+            $this->value = $record->$key;
         } else {
             $this->value = $value;
         }
@@ -56,9 +66,7 @@ class EncryptedEnum extends Enum
             'type'  => 'text',
             'parts' => array(
                 'datatype'   => 'text',
-//                'precision'  => $this->service->calculateRequiredFieldSize(strlen('Y-m-d H:i:s')),
                 'null'       => 'not null',
-                'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue
             )
         );

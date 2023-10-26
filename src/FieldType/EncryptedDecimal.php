@@ -1,5 +1,13 @@
 <?php
 
+namespace Madmatt\EncryptAtRest\FieldType;
+
+use Exception;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBDecimal;
+use Madmatt\EncryptAtRest\AtRestCryptoService;
+
 /**
  * Class EncryptedDatetime
  * @package EncryptAtRest\Fieldtypes
@@ -7,25 +15,26 @@
  * This class wraps around a SS_Datetime, storing the value in the database as an encrypted string in a varchar field, but
  * returning it to SilverStripe as a decrypted SS_Datetime object.
  */
-class EncryptedDecimal extends Decimal
+class EncryptedDecimal extends DBDecimal
 {
-
-    public $is_encrypted = true;
     /**
      * @var AtRestCryptoService
      */
     protected $service;
 
-    public function __construct($name)
+    public function __construct($name = null, $wholeSize = 9, $decimalSize = 2, $defaultValue = 0)
     {
-        parent::__construct($name);
-        $this->service = Injector::inst()->get('AtRestCryptoService');
+        parent::__construct($name, $wholeSize, $decimalSize, $defaultValue);
+        $this->service = Injector::inst()->get(AtRestCryptoService::class);
     }
 
-    public function setValue($value, $record = array())
+    public function setValue($value, $record = null, $markChanged = true)
     {
-        if (array_key_exists($this->name, $record) && $value === null) {
+        if (is_array($record) && array_key_exists($this->name, $record) && $value === null) {
             $this->value = $record[$this->name];
+        } elseif (is_object($record) && property_exists($record, $this->name) && $value === null) {
+            $key = $this->name;
+            $this->value = $record->$key;
         } else {
             $this->value = $value;
         }
@@ -35,7 +44,12 @@ class EncryptedDecimal extends Decimal
     {
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
-            return $this->service->decrypt($value);
+            try {
+                $value = $this->service->decrypt($value);
+            } catch (Exception $e) {
+                // We were unable to decrypt. Possibly a false positive, but return the unencrypted value
+                return $value;
+            }
         }
         return (float)$value;
     }
@@ -51,9 +65,7 @@ class EncryptedDecimal extends Decimal
             'type'  => 'text',
             'parts' => array(
                 'datatype'   => 'text',
-//                'precision'  => $this->service->calculateRequiredFieldSize(strlen('Y-m-d H:i:s')),
                 'null'       => 'not null',
-                'default'    => $this->defaultVal,
                 'arrayValue' => $this->arrayValue
             )
         );
