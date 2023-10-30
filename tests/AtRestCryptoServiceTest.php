@@ -74,11 +74,11 @@ class AtRestCryptoServiceTest extends SapphireTest
             ? $assetStore->getProtectedFilesystem()->getAdapter()
             : $assetStore->getPublicFilesystem()->getAdapter();
 
-		// Check for existence of $adaptor->prefixPath() showing we are using SS5.0+
-		$prefixPath = 'applyPathPrefix';
-		if (method_exists($adapter, 'prefixPath')) {
-			$prefixPath = 'prefixPath';
-		}
+        // Check for existence of $adaptor->prefixPath() showing we are using SS5.0+
+        $prefixPath = 'applyPathPrefix';
+        if (method_exists($adapter, 'prefixPath')) {
+            $prefixPath = 'prefixPath';
+        }
 
         $file = File::create();
         $file->setFromString($originalText, $originalFilename);
