@@ -74,6 +74,12 @@ class AtRestCryptoServiceTest extends SapphireTest
             ? $assetStore->getProtectedFilesystem()->getAdapter()
             : $assetStore->getPublicFilesystem()->getAdapter();
 
+		// Check for existence of $adaptor->prefixPath() showing we are using SS5.0+
+		$prefixPath = 'applyPathPrefix';
+		if (method_exists($adapter, 'prefixPath')) {
+			$prefixPath = 'prefixPath';
+		}
+
         $file = File::create();
         $file->setFromString($originalText, $originalFilename);
         $file->write();
@@ -84,7 +90,7 @@ class AtRestCryptoServiceTest extends SapphireTest
             $file->publishFile();
         }
 
-        $oldFilename = $adapter->prefixPath(
+        $oldFilename = $adapter->$prefixPath(
             $strategy->buildFileID(
                 new ParsedFileID(
                     $file->getFilename(),
@@ -116,7 +122,7 @@ class AtRestCryptoServiceTest extends SapphireTest
         // Confirm the old file has been deleted
         $this->assertFileDoesNotExist($oldFilename);
 
-        $encryptedFilename = $adapter->prefixPath(
+        $encryptedFilename = $adapter->$prefixPath(
             $strategy->buildFileID(
                 new ParsedFileID(
                     $encryptedFile->getFilename(),
@@ -144,7 +150,7 @@ class AtRestCryptoServiceTest extends SapphireTest
 
         // Now decrypt the file back
         $decryptedFile = $service->decryptFile($encryptedFile, null, $visibility);
-        $decryptedFilename = $adapter->prefixPath(
+        $decryptedFilename = $adapter->$prefixPath(
             $strategy->buildFileID(
                 new ParsedFileID(
                     $decryptedFile->getFilename(),
