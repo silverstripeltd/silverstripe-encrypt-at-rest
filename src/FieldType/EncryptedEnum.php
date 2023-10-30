@@ -3,6 +3,7 @@
 namespace Madmatt\EncryptAtRest\FieldType;
 
 use Exception;
+use Madmatt\EncryptAtRest\Traits\EncryptedFieldGetValueTrait;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\FieldType\DBEnum;
@@ -18,6 +19,8 @@ use Madmatt\EncryptAtRest\AtRestCryptoService;
  */
 class EncryptedEnum extends DBEnum
 {
+    use EncryptedFieldGetValueTrait;
+
     /**
      * @var AtRestCryptoService
      */
@@ -41,7 +44,7 @@ class EncryptedEnum extends DBEnum
         }
     }
 
-    public function getDecryptedValue($value)
+    public function getDecryptedValue(string $value = '')
     {
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
@@ -53,11 +56,6 @@ class EncryptedEnum extends DBEnum
             }
         }
         return $value;
-    }
-
-    public function getValue()
-    {
-        return $this->getDecryptedValue($this->value);
     }
 
     public function requireField()

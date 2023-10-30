@@ -3,6 +3,7 @@
 namespace Madmatt\EncryptAtRest\FieldType;
 
 use Exception;
+use Madmatt\EncryptAtRest\Traits\EncryptedFieldGetValueTrait;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\FieldType\DBInt;
@@ -17,6 +18,8 @@ use Madmatt\EncryptAtRest\AtRestCryptoService;
  */
 class EncryptedInt extends DBInt
 {
+    use EncryptedFieldGetValueTrait;
+
     /**
      * @var AtRestCryptoService
      */
@@ -40,7 +43,7 @@ class EncryptedInt extends DBInt
         }
     }
 
-    public function getDecryptedValue($value)
+    public function getDecryptedValue(string $value = '')
     {
         // Test if we're actually an encrypted value;
         if (ctype_xdigit($value) && strlen($value) > 130) {
@@ -52,11 +55,6 @@ class EncryptedInt extends DBInt
             }
         }
         return $value;
-    }
-
-    public function getValue()
-    {
-        return $this->getDecryptedValue($this->value);
     }
 
     public function requireField()
