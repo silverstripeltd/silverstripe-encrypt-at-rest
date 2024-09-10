@@ -16,6 +16,7 @@
         "source": "https://github.com/madmatt/silverstripe-encrypt-at-rest"
     },
     "require": {
+        "php": "^8.0",  
         "silverstripe/framework": "^5",
         "defuse/php-encryption": "^2.2"
     },
@@ -29,5 +30,11 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "silverstripe/vendor-plugin": true
+        }
+    }
 }
